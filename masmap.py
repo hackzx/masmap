@@ -2,20 +2,24 @@
 import sys
 import os
 import socket
+import urlparse
 
-ip = sys.argv[1]
-ip = ip.replace('http://', '').replace('https://', '').replace('/', '')
+
+def url2ip(url):
+    try:
+        domain = urlparse.urlparse(url).hostname
+        ip = socket.gethostbyname(domain)
+        return ip
+    except:
+        try:
+            ip = socket.gethostbyname(url)
+            return ip
+        except:
+            pass
 
 
 def Location(ip):
     os.system('curl ip.cn/index.php?ip={0}'.format(ip))
-
-
-def domain2ip(domain):
-    try:
-        return socket.gethostbyname(domain)
-    except:
-        return 0
 
 
 def masscan(ip):
@@ -45,6 +49,8 @@ def nmap(ip, ports):
 
 if __name__ == '__main__':
 
+    ip = url2ip(sys.argv[1])
+
     print '\r'
 
     try:
@@ -52,7 +58,6 @@ if __name__ == '__main__':
     except:
         print 'IP: ' + ip
 
-    ip = domain2ip(ip)
     masscan(ip)
     ports = selectPorts()
     nmap(ip, ports)
