@@ -25,7 +25,7 @@ def Location(ip):
 def masscan(ip, rate):
     for x in xrange(0, 3):
         os.system('masscan -p1-65535 --wait 1 --rate=' + rate + ' -oG {tmp} {ip}'.format(tmp='/tmp/tmp_result_' + str(x), ip=ip))
-        os.system('cat /tmp/tmp_result')
+        os.system('cat /tmp/tmp_result_' + str(x))
 
 
 def selectPorts():
@@ -39,6 +39,7 @@ def selectPorts():
                 ports += ','
             port = line.split()
             ports += port[4].replace('/', '').replace('open', '').replace('tcp', '')
+    os.system('rm -rf /tmp/tmp_result')
     return ports
 
 
