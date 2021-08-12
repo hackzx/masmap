@@ -1,4 +1,6 @@
 # coding=u8
+# TODO: combine https://xz.aliyun.com/t/6001
+
 import sys
 import os
 import socket
@@ -44,8 +46,8 @@ def selectPorts():
 
 
 def nmap(ip, ports):
-    print('\n[CMD] nmap -Pn -T5 -sV -A {ip} -p{ports} -oN {ip}.result'.format(ip=ip, ports=ports))
-    os.system('nmap -Pn -T5 -sV -A {ip} -p{ports} -oN {ip}.result'.format(ip=ip, ports=ports))
+    print('\n[CMD] nmap -Pn -T5 -sV {ip} -p{ports} -oN {ip}.result'.format(ip=ip, ports=ports))
+    os.system('nmap -Pn -T5 -sV {ip} -p{ports} -oN {ip}.result'.format(ip=ip, ports=ports))
 
 
 if __name__ == '__main__':
