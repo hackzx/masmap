@@ -1,10 +1,22 @@
-# coding=u8
-# TODO: combine https://xz.aliyun.com/t/6001
-
+# coding: UTF-8
+from urllib.parse import urlparse
+import requests
+import gevent
+from gevent import monkey
+monkey.patch_socket()
+from gevent.pool import Pool
 import sys
 import os
 import socket
-import urlparse
+import re
+
+from requests.adapters import HTTPAdapter
+
+s = requests.Session()
+s.mount('http://', HTTPAdapter(max_retries=3))
+s.mount('https://', HTTPAdapter(max_retries=3))
+
+timeout = 5
 
 
 def url2ip(url):
@@ -24,13 +36,15 @@ def Location(ip):
     os.system('curl ip.cn/index.php?ip={0}'.format(ip))
 
 
-def masscan(ip, rate):
-    for x in xrange(0, 3):
+def masscan(ip, rate=5000):
+    for x in range(0, 3):
         os.system('masscan -p1-65535 --wait 1 --rate=' + rate + ' -oG {tmp} {ip}'.format(tmp='/tmp/tmp_result_' + str(x), ip=ip))
         os.system('cat /tmp/tmp_result_' + str(x))
+    print('\n')
 
 
 def selectPorts():
+    # os.system('rm -rf /tmp/tmp_result')
     os.system('cat /tmp/tmp_result_0 /tmp/tmp_result_1 /tmp/tmp_result_2 | sort | uniq > /tmp/tmp_result')
     os.system('sed -i -e \'/#/d\' /tmp/tmp_result')
 
@@ -41,7 +55,6 @@ def selectPorts():
                 ports += ','
             port = line.split()
             ports += port[4].replace('/', '').replace('open', '').replace('tcp', '')
-    os.system('rm -rf /tmp/tmp_result')
     return ports
 
 
@@ -50,10 +63,43 @@ def nmap(ip, ports):
     os.system('nmap -Pn -T5 -sV {ip} -p{ports} -oN {ip}.result'.format(ip=ip, ports=ports))
 
 
+def getOpenPortUlrs(ip, ports):
+    # ip = ''
+    # ports = []
+    urls = []
+    for port in ports:
+        urls.append(f'http://{ip}:{port}')
+        urls.append(f'https://{ip}:{port}')
+
+    return urls
+
+
+def web(url):
+    try:
+        r = s.get(url, timeout=timeout)
+
+        content = r.text
+        title = re.search(r'<title>(.*)</title>', content)
+        if title:
+            title = title.group(1).strip().strip('\r').strip('\n')
+        else:
+            title = 'None'
+        print(url, r.status_code, f'<{title}>')
+    except:
+        pass
+
+
+def run(urls):
+    p = Pool(500)
+    for i in urls:
+        p.spawn(web, i.strip())
+    p.join()
+
+
 if __name__ == '__main__':
 
-    if len(sys.argv) < 3:
-        print('Usage: python2 ' + sys.argv[0] + ' ip rate')
+    if len(sys.argv) < 2:
+        print('Usage: python3 ' + sys.argv[0] + ' ip rate')
         sys.exit()
 
     ip = url2ip(sys.argv[1])
@@ -61,6 +107,14 @@ if __name__ == '__main__':
 
     print('\nIP: ' + ip + '\r')
 
+    # masscan(ip, rate)
+    # ports = selectPorts()
+    # nmap(ip, ports)
+
     masscan(ip, rate)
     ports = selectPorts()
-    nmap(ip, ports)
+    ports = ports.split(",")
+
+    urls = getOpenPortUlrs(ip, ports)
+
+    run(urls)
