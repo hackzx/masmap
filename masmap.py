@@ -1,15 +1,16 @@
-# coding: UTF-8
-from urllib.parse import urlparse
-import requests
+# coding: utf8
 import gevent
 from gevent import monkey
-monkey.patch_socket()
+# monkey.patch_socket()
+monkey.patch_all()
 from gevent.pool import Pool
 import sys
 import os
 import socket
 import re
+from urllib.parse import urlparse
 
+import requests
 from requests.adapters import HTTPAdapter
 
 s = requests.Session()
@@ -74,6 +75,22 @@ def getOpenPortUlrs(ip, ports):
     return urls
 
 
+def getAllPortUlrs(ip):
+
+    startPort = 1
+    endPort = 30000
+    http = [f'http://{ip}:{str(x)}' for x in range(startPort, endPort)]
+    https = [f'https://{ip}:{str(x)}' for x in range(startPort, endPort)]
+
+    urls = []
+
+    for i in range(0, len(http)):
+        urls.append(http[i])
+        urls.append(https[i])
+
+    return urls
+
+
 def web(url):
     try:
         r = s.get(url, timeout=timeout)
@@ -84,6 +101,9 @@ def web(url):
             title = title.group(1).strip().strip('\r').strip('\n')
         else:
             title = 'None'
+
+        if r.status_code == 400:
+            url = url.replace('http', 'https')
         print(url, r.status_code, f'<{title}>')
     except:
         pass
@@ -111,10 +131,13 @@ if __name__ == '__main__':
     # ports = selectPorts()
     # nmap(ip, ports)
 
-    masscan(ip, rate)
+    # masscan(ip, rate)
     ports = selectPorts()
-    ports = ports.split(",")
 
-    urls = getOpenPortUlrs(ip, ports)
+    if ports is not None:
+        ports = ports.split(",")
+        urls = getOpenPortUlrs(ip, ports)
+    else:
+        urls = getAllPortUlrs(ip)
 
     run(urls)
