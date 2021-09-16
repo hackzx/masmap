@@ -1,17 +1,19 @@
 # coding: utf8
-import gevent
 from gevent import monkey
-# monkey.patch_socket()
 monkey.patch_all()
 from gevent.pool import Pool
 import sys
 import os
 import socket
 import re
+import subprocess
 from urllib.parse import urlparse
 
 import requests
 from requests.adapters import HTTPAdapter
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 s = requests.Session()
 s.mount('http://', HTTPAdapter(max_retries=3))
@@ -33,40 +35,46 @@ def url2ip(url):
             pass
 
 
-def Location(ip):
-    os.system('curl ip.cn/index.php?ip={0}'.format(ip))
+def location(ip):
+    os.system(f'curl "http://cip.cc/{ip}" --connect-timeout 5')
 
 
-def masscan(ip, rate=5000):
+def masscan(ip, rate):
+    masscan = 'masscan'
+    out_text = subprocess.check_output(
+        [masscan, '-p 1-65535', '--wait=0', f'--rate={rate}', ip],
+        shell=False).decode('utf-8')
+    ports = out_text.split('\n')
+    result = []
+    for port in ports:
+        if port == '':
+            continue
+        port = port.strip().strip('\n').split(' ')
+        result.append(port[3].replace('/', '').replace('udp', '').replace('tcp', ''))
+    print(result)
+    return result
+
+
+def masscan3(ip):
+    ports = []
     for x in range(0, 3):
-        os.system('masscan -p1-65535 --wait 1 --rate=' + rate + ' -oG {tmp} {ip}'.format(tmp='/tmp/tmp_result_' + str(x), ip=ip))
-        os.system('cat /tmp/tmp_result_' + str(x))
-    print('\n')
+        ports += masscan(ip, 10000)
+    ports = list(set(ports))
 
-
-def selectPorts():
-    # os.system('rm -rf /tmp/tmp_result')
-    os.system('cat /tmp/tmp_result_0 /tmp/tmp_result_1 /tmp/tmp_result_2 | sort | uniq > /tmp/tmp_result')
-    os.system('sed -i -e \'/#/d\' /tmp/tmp_result')
-
-    ports = ''
-    with open('/tmp/tmp_result') as f:
-        for line in f:
-            if ports != '':
-                ports += ','
-            port = line.split()
-            ports += port[4].replace('/', '').replace('open', '').replace('tcp', '')
+    # result = {}
+    # result[ip] = ports
+    # return result
     return ports
 
 
 def nmap(ip, ports):
-    print('\n[CMD] nmap -Pn -T5 -sV {ip} -p{ports} -oN {ip}.result'.format(ip=ip, ports=ports))
-    os.system('nmap -Pn -T5 -sV {ip} -p{ports} -oN {ip}.result'.format(ip=ip, ports=ports))
+    print('\n[CMD] nmap -Pn -T5 -sV {ip} -p{ports} -oN {ip}.result'.format(
+        ip=ip, ports=ports))
+    os.system('nmap -Pn -T5 -sV {ip} -p{ports} -oN {ip}.result'.format(
+        ip=ip, ports=ports))
 
 
 def getOpenPortUlrs(ip, ports):
-    # ip = ''
-    # ports = []
     urls = []
     for port in ports:
         urls.append(f'http://{ip}:{port}')
@@ -93,7 +101,7 @@ def getAllPortUlrs(ip):
 
 def web(url):
     try:
-        r = s.get(url, timeout=timeout)
+        r = s.get(url, timeout=timeout, verify=False)
 
         content = r.text
         title = re.search(r'<title>(.*)</title>', content)
@@ -102,9 +110,8 @@ def web(url):
         else:
             title = 'None'
 
-        if r.status_code == 400:
-            url = url.replace('http', 'https')
-        print(url, r.status_code, f'<{title}>')
+        if r.status_code != 400:
+            print(url, r.status_code, f'<{title}>')
     except:
         pass
 
@@ -118,24 +125,22 @@ def run(urls):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) < 2:
-        print('Usage: python3 ' + sys.argv[0] + ' ip rate')
+    if len(sys.argv) < 1:
+        print('Usage: python3 ' + sys.argv[0] + ' ip')
         sys.exit()
 
     ip = url2ip(sys.argv[1])
-    rate = sys.argv[2]
 
-    print('\nIP: ' + ip + '\r')
+    location(ip)
 
-    # masscan(ip, rate)
-    # ports = selectPorts()
-    # nmap(ip, ports)
-
-    # masscan(ip, rate)
-    ports = selectPorts()
+    ports = masscan3(ip)
 
     if ports is not None:
-        ports = ports.split(",")
+        print()
+        print(f'[*] 可用端口: {len(ports)}')
+        print(ports)
+        print()
+        print(f'[*] 可用WEB:')
         urls = getOpenPortUlrs(ip, ports)
     else:
         urls = getAllPortUlrs(ip)
