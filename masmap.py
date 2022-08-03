@@ -40,6 +40,7 @@ def masscan(ip, rate):
             continue
         port = port.strip().strip('\n').split(' ')
         result.append(port[3].replace('/', '').replace('udp', '').replace('tcp', ''))
+    print(f'\n[*] 可用端口: {len(result)}')
     print(result)
     return result
 
