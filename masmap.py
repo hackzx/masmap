@@ -1,5 +1,6 @@
 # coding: utf8
 #!/usr/bin/env python3
+import ipaddress
 import sys
 import os
 import re
@@ -12,17 +13,50 @@ fscanElf = 'bin/fscan'
 masscanElf = 'bin/masscan'
 
 
-def url2ip(url):
-    try:
-        domain = urlparse(url).hostname
-        ip = socket.gethostbyname(domain)
-        return ip
-    except:
+def getIP(input):
+
+    def url2ip(url):
         try:
-            ip = socket.gethostbyname(url)
+            domain = urlparse(url).hostname
+            ip = socket.gethostbyname(domain)
             return ip
         except:
-            pass
+            try:
+                ip = socket.gethostbyname(url)
+                return ip
+            except:
+                pass
+ 
+    def range2list(ip):
+
+        def ip2num(ip):
+            ip = [int(x) for x in ip.split('.')]
+            return ip[0] << 24 | ip[1] << 16 | ip[2] << 8 | ip[3]
+
+        def num2ip(num):
+            return '%s.%s.%s.%s' % ((num & 0xff000000) >> 24,
+                                    (num & 0x00ff0000) >> 16,
+                                    (num & 0x0000ff00) >> 8,
+                                    (num & 0x000000ff))
+
+        start, end = [ip2num(x) for x in ip.split('-')]
+        return [num2ip(num) for num in range(start, end + 1) if num & 0xff]
+
+    def cidr2list(cidr):
+        return [str(ip) for ip in ipaddress.IPv4Network(cidr)]
+
+    if 'http' in input:
+        return url2ip(input)
+
+    if '/' in input:
+        input = re.sub('\.\d+\/','.0/',input)
+        return cidr2list(input)
+
+    if '-' in input:
+        return range2list(input)
+
+    else:
+        return input
 
 
 def location(ip):
@@ -65,7 +99,7 @@ if __name__ == '__main__':
         print('Usage: python3 ' + sys.argv[0] + ' ip')
         sys.exit()
 
-    ip = url2ip(sys.argv[1])
+    ip = getIP(sys.argv[1])
 
     location(ip)
 
