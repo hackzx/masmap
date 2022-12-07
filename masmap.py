@@ -14,7 +14,7 @@ masscanElf = 'bin/masscan'
 
 def url2ip(url):
     try:
-        domain = urlparse.urlparse(url).hostname
+        domain = urlparse(url).hostname
         ip = socket.gethostbyname(domain)
         return ip
     except:
