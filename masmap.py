@@ -11,6 +11,7 @@ path = '/opt/masmap'
 
 fscanElf = path + '/bin/fscan'
 masscanElf = path + '/bin/masscan'
+allinElf = path + '/bin/AlliN.py'
 
 
 def url2ip(url):
@@ -49,15 +50,37 @@ def masscan(ip, rate):
 def masscan3(ip):
     ports = []
     for x in range(0, 3):
-        ports += masscan(ip, 10000)
+        ports += masscan(ip, 100000)
     ports = list(set(ports))
 
     return ports
 
 
+# def allin(ip):
+#     os.system('python2 {allin} --host {ip} -p 1-65535 -m pscan -t 100 -o {path}/results/{ip}.allin'.format(allin=allinElf, ip=ip, path=path))
+#     # python2 AlliN.py --host 123.138.87.76 -p 1-65535 -m pscan
+#     # print('python {allin} --host {ip} -p 1-65535 -m pscan -t 100 -o results/{ip}.allin'.format(allin=allinElf, ip=ip))
+
+
+def allin(ip):
+    os.system('python2 {allin} --host {ip} -p 1-65535 -m pscan -t 100 -o {path}/results/{ip}.allin'.format(allin=allinElf, ip=ip, path=path))
+    # python2 AlliN.py --host 123.138.87.76 -p 1-65535 -m pscan
+    # print('python {allin} --host {ip} -p 1-65535 -m pscan -t 100 -o {path}/results/{ip}.allin'.format(allin=allinElf, ip=ip, path=path))
+    result = open('{path}/results/{ip}.allin'.format(ip=ip, path=path))
+    result = result.readlines()
+    ports = []
+    for line in result:
+        port = line.split('|')[3].strip().replace(']','')
+        ports.append(port)
+
+    ports = list(set(ports))
+    # strPorts = ','.join(ports)
+    return ports
+
+
 def fscan(ip, ports):
     # print('\n[CMD] {fscan} -np -nobr -h {ip} -p {ports} -o {ip}.result'.format(fscan=fscanElf, ip=ip, ports=ports))
-    os.system('{fscan} -np -nobr -h {ip} -p {ports} -o /tmp/{ip}.result'.format(fscan=fscanElf, ip=ip, ports=ports))
+    os.system('{fscan} -np -h {ip} -p {ports} -o {path}/results/{ip}.result'.format(fscan=fscanElf, ip=ip, ports=ports, path=path))
 
 
 if __name__ == '__main__':
@@ -78,4 +101,9 @@ if __name__ == '__main__':
         strPorts = ','.join(ports)
         fscan(ip, strPorts)
     else:
-        fscan(ip, '1-65535')
+        print('masscan scan failed, try to scan with tcp full Accept Scan.')
+        ports = allin(ip)
+        print(f'\n[*] 可用端口: {len(ports)}')
+        print(ports)
+        strPorts = ','.join(ports)
+        fscan(ip, strPorts)
