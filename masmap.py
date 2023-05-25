@@ -50,7 +50,7 @@ def masscan(ip, rate):
 def masscan3(ip):
     ports = []
     for x in range(0, 3):
-        ports += masscan(ip, 100000)
+        ports += masscan(ip, 10000)
     ports = list(set(ports))
 
     return ports
