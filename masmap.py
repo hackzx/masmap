@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 path = '/opt/masmap'
 
-fscanElf = path + '/bin/fscan'
+fscanElf = path + '/bin/tscan'
 masscanElf = path + '/bin/masscan'
 allinElf = path + '/bin/AlliN.py'
 
@@ -63,7 +63,7 @@ def masscan3(ip):
 
 
 def allin(ip):
-    os.system('python2 {allin} --host {ip} -p 1-65535 -m pscan -t 100 -o {path}/results/{ip}.allin'.format(allin=allinElf, ip=ip, path=path))
+    os.system('python2 {allin} --host {ip} -p 1-65535 -m pscan -t 200 -o {path}/results/{ip}.allin'.format(allin=allinElf, ip=ip, path=path))
     # python2 AlliN.py --host 123.138.87.76 -p 1-65535 -m pscan
     # print('python {allin} --host {ip} -p 1-65535 -m pscan -t 100 -o {path}/results/{ip}.allin'.format(allin=allinElf, ip=ip, path=path))
     result = open('{path}/results/{ip}.allin'.format(ip=ip, path=path))
