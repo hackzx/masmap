@@ -1,0 +1,13 @@
+58.87.99.70:65535 open
+58.87.99.70:443 open
+58.87.99.70:5555 open
+58.87.99.70:22 open
+58.87.99.70:80 open
+58.87.99.70:139 open
+58.87.99.70:34566 open
+[*] WebTitle: http://58.87.99.70:65535  code:401 len:13     title:None
+[*] WebTitle: http://58.87.99.70:34566  code:301 len:44     title:None 跳转url: http://58.87.99.70:34566/template
+[*] WebTitle: http://58.87.99.70:34566/template/ code:200 len:6993   title:DNSLog
+[*] WebTitle: https://58.87.99.70       code:202 len:1999   title:SoftEther VPN Server
+[*] WebTitle: https://58.87.99.70       code:202 len:1999   title:SoftEther VPN Server
+[*] WebTitle: https://58.87.99.70:5555  code:202 len:1999   title:SoftEther VPN Server
